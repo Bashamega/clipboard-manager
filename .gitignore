@@ -1,0 +1,10 @@
+# Xcode
+build/
+*.xcworkspace
+xcuserdata/
+*.moved-aside
+DerivedData/
+*.hmap
+*.ipa
+*.xcuserstate
+

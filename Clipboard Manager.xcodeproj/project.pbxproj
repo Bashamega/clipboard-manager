@@ -6,8 +6,13 @@
 	objectVersion = 77;
 	objects = {
 
+/* Begin PBXBuildFile section */
+		66777DA32F2F38FE00C92BC7 /* .gitignore in Resources */ = {isa = PBXBuildFile; fileRef = 66777DA22F2F38F900C92BC7 /* .gitignore */; };
+/* End PBXBuildFile section */
+
 /* Begin PBXFileReference section */
 		66777D8B2F2F30DA00C92BC7 /* Clipboard Manager.app */ = {isa = PBXFileReference; explicitFileType = wrapper.application; includeInIndex = 0; path = "Clipboard Manager.app"; sourceTree = BUILT_PRODUCTS_DIR; };
+		66777DA22F2F38F900C92BC7 /* .gitignore */ = {isa = PBXFileReference; lastKnownFileType = text; path = .gitignore; sourceTree = "<group>"; };
 /* End PBXFileReference section */
 
 /* Begin PBXFileSystemSynchronizedRootGroup section */
@@ -32,6 +37,7 @@
 		66777D822F2F30DA00C92BC7 = {
 			isa = PBXGroup;
 			children = (
+				66777DA22F2F38F900C92BC7 /* .gitignore */,
 				66777D8D2F2F30DA00C92BC7 /* Clipboard Manager */,
 				66777D8C2F2F30DA00C92BC7 /* Products */,
 			);
@@ -109,6 +115,7 @@
 			isa = PBXResourcesBuildPhase;
 			buildActionMask = 2147483647;
 			files = (
+				66777DA32F2F38FE00C92BC7 /* .gitignore in Resources */,
 			);
 			runOnlyForDeploymentPostprocessing = 0;
 		};
