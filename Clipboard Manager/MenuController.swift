@@ -14,6 +14,11 @@ final class MenuController {
     init(copyListener: CopyListener) {
         self.copyListener = copyListener
         setupMenuBar()
+        
+        // Only rebuild menu when history actually changes
+        copyListener.onHistoryChanged = { [weak self] in
+            self?.rebuildMenu()
+        }
     }
 
     func setupMenuBar() {
@@ -31,27 +36,55 @@ final class MenuController {
         // Add clipboard history
         let history = copyListener.getHistory()
         if history.isEmpty {
-            menu.addItem(NSMenuItem(title: "No copies yet", action: nil, keyEquivalent: ""))
+            let item = NSMenuItem(title: "No clipboard history yet", action: nil, keyEquivalent: "")
+            item.isEnabled = false
+            menu.addItem(item)
         } else {
-            for text in history {
-                let item = NSMenuItem(title: text, action: #selector(copyAgain(_:)), keyEquivalent: "")
+            for (index, text) in history.enumerated() {
+                // Truncate long text for display
+                let displayText = text.count > 50
+                    ? String(text.prefix(47)) + "..."
+                    : text
+                
+                let item = NSMenuItem(
+                    title: displayText.replacingOccurrences(of: "\n", with: " "),
+                    action: #selector(copyToClipboard(_:)),
+                    keyEquivalent: index < 9 ? "\(index + 1)" : ""
+                )
                 item.target = self
+                item.representedObject = text // Store full text
                 menu.addItem(item)
             }
         }
 
         menu.addItem(NSMenuItem.separator())
+        
+        // Add clear history option
+        if !history.isEmpty {
+            let clearItem = NSMenuItem(title: "Clear History", action: #selector(clearHistory), keyEquivalent: "")
+            clearItem.target = self
+            menu.addItem(clearItem)
+            menu.addItem(NSMenuItem.separator())
+        }
+        
         menu.addItem(NSMenuItem(title: "Quit", action: #selector(NSApplication.terminate(_:)), keyEquivalent: "q"))
 
         statusItem.menu = menu
     }
 
-    // Copy a history item again
-    @objc func copyAgain(_ sender: NSMenuItem) {
+    // Copy a history item to clipboard
+    @objc func copyToClipboard(_ sender: NSMenuItem) {
+        guard let text = sender.representedObject as? String else { return }
+        
         let pb = NSPasteboard.general
         pb.clearContents()
-        pb.setString(sender.title, forType: .string)
-        rebuildMenu() // move it to top
+        pb.setString(text, forType: .string)
+        
+        // Show brief notification (optional)
+        print("✅ Copied to clipboard")
+    }
+    
+    @objc func clearHistory() {
+        copyListener.clearHistory()
     }
 }
-

@@ -5,7 +5,7 @@
 //  Created by adam Naji on 01/02/2026.
 //
 
-import AppKit
+import ApplicationServices
 
 struct Accessibility {
     static func checkPermission() -> Bool {

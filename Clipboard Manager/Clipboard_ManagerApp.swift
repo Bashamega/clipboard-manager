@@ -1,42 +1,53 @@
-//
-//  MenuController.swift
-//  Clipboard Manager
-//
-//  Created by adam Naji on 01/02/2026.
-//
 import SwiftUI
+import ApplicationServices
 
 @main
 struct ClipboardMenuBarApp: App {
 
-    let copyListener = CopyListener()
-    var menuController: MenuController!
-
-    init() {
-        menuController = MenuController(copyListener: copyListener)
-
-        // Start listener after app launch
-        let listener = copyListener
-        DispatchQueue.main.async {
-            if !Accessibility.checkPermission() {
-                Accessibility.promptPermission()
-            } else {
-                listener.start()
-            }
-        }
-
-        let menuController = self.menuController
-        Timer.scheduledTimer(withTimeInterval: 0.5, repeats: true) { _ in
-            menuController?.rebuildMenu()
-        }
-    }
+    @NSApplicationDelegateAdaptor(AppDelegate.self) var appDelegate
 
     var body: some Scene {
         WindowGroup {
-            EmptyView()
-                .frame(width: 0, height: 0)
-                .hidden()
+            AccessibilityStatusView()
         }
+        .windowStyle(.hiddenTitleBar)
+        .windowResizability(.contentSize)
     }
 }
 
+class AppDelegate: NSObject, NSApplicationDelegate {
+    private let copyListener = CopyListener()
+    private var menuController: MenuController?
+    private var permissionCheckTimer: Timer?
+    
+    func applicationDidFinishLaunching(_ notification: Notification) {
+        // Initialize menu controller
+        menuController = MenuController(copyListener: copyListener)
+        
+        // Start the app
+        requestAccessibilityIfNeeded()
+    }
+    
+    private func requestAccessibilityIfNeeded() {
+        if Accessibility.checkPermission() {
+            copyListener.start()
+        } else {
+            Accessibility.promptPermission()
+
+            // Poll until permission granted
+            permissionCheckTimer = Timer.scheduledTimer(withTimeInterval: 1.0, repeats: true) { [weak self] timer in
+                if Accessibility.checkPermission() {
+                    timer.invalidate()
+                    self?.permissionCheckTimer = nil
+                    self?.copyListener.start()
+                }
+            }
+        }
+    }
+    
+    func applicationWillTerminate(_ notification: Notification) {
+        // Clean up
+        permissionCheckTimer?.invalidate()
+        copyListener.stop()
+    }
+}
