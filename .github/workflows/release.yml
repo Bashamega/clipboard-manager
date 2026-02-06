@@ -12,17 +12,11 @@ jobs:
       contents: write
 
     steps:
-      # -------------------------------
-      # Checkout
-      # -------------------------------
       - name: Checkout
         uses: actions/checkout@v4
         with:
           fetch-depth: 0
 
-      # -------------------------------
-      # Get latest Git tag
-      # -------------------------------
       - name: Get latest tag
         id: tag
         run: |
@@ -30,32 +24,21 @@ jobs:
           TAG=$(git describe --tags --abbrev=0 || echo "v0.0.0")
           echo "tag=$TAG" >> $GITHUB_OUTPUT
 
-      # -------------------------------
-      # Bump patch version
-      # -------------------------------
       - name: Bump patch version
         id: version
         run: |
           VERSION=${{ steps.tag.outputs.tag }}
           VERSION=${VERSION#v}
-
           IFS='.' read -r MAJOR MINOR PATCH <<< "$VERSION"
           PATCH=$((PATCH+1))
-
           NEW="v$MAJOR.$MINOR.$PATCH"
           echo "version=$NEW" >> $GITHUB_OUTPUT
 
-      # -------------------------------
-      # Create Git tag for release
-      # -------------------------------
       - name: Create Git tag
         run: |
           git tag ${{ steps.version.outputs.version }}
           git push origin ${{ steps.version.outputs.version }}
 
-      # -------------------------------
-      # Build macOS app
-      # -------------------------------
       - name: Build macOS app
         run: |
           xcodebuild \
@@ -65,21 +48,12 @@ jobs:
             -destination "platform=macOS" \
             clean build
 
-      # -------------------------------
-      # Install create-dmg
-      # -------------------------------
       - name: Install create-dmg
         run: brew install create-dmg
 
-      # -------------------------------
-      # Build DMG
-      # -------------------------------
       - name: Build DMG
         run: ./scripts/build_dmg.sh
 
-      # -------------------------------
-      # Create GitHub Release
-      # -------------------------------
       - name: Create GitHub Release
         uses: softprops/action-gh-release@v2
         with:
@@ -88,12 +62,9 @@ jobs:
           files: build/dmg/*.dmg
           generate_release_notes: true
 
-      # -------------------------------
-      # Generate/Update appcast.xml
-      # -------------------------------
       - name: Generate appcast.xml
         run: |
-          VERSION=${{ steps.version.outputs.version }}
+          VERSION="${{ steps.version.outputs.version }}"
           DMG_URL="https://github.com/Bashamega/clipboard-manager/releases/download/$VERSION/Clipboard.Manager.dmg"
 
           cat > appcast.xml <<EOF
@@ -102,11 +73,11 @@ jobs:
   <channel>
     <title>Clipboard Manager Updates</title>
     <item>
-      <title>Version $VERSION</title>
-      <sparkle:version>$VERSION</sparkle:version>
-      <sparkle:shortVersionString>$VERSION</sparkle:shortVersionString>
+      <title>Version ${VERSION}</title>
+      <sparkle:version>${VERSION}</sparkle:version>
+      <sparkle:shortVersionString>${VERSION}</sparkle:shortVersionString>
       <enclosure
-        url="$DMG_URL"
+        url="${DMG_URL}"
         sparkle:os="macos"
         length="0"
         type="application/octet-stream"/>
@@ -115,16 +86,13 @@ jobs:
 </rss>
 EOF
 
-      # -------------------------------
-      # Commit appcast.xml if changed (Conventional Commit)
-      # -------------------------------
       - name: Commit appcast.xml if changed
         run: |
           git config user.name "github-actions[bot]"
           git config user.email "github-actions[bot]@users.noreply.github.com"
           git add appcast.xml
           if ! git diff --cached --quiet; then
-            git commit -m "chore(release): update appcast.xml for ${{ steps.version.outputs.version }}"
+            git commit -m "chore(release): update appcast.xml for ${VERSION}"
             git push origin main
           else
             echo "No changes to appcast.xml, skipping commit."
