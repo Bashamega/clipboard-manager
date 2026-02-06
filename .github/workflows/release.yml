@@ -38,8 +38,17 @@ jobs:
             -project "Clipboard Manager.xcodeproj" \
             -scheme "Clipboard Manager" \
             -configuration Release \
-            -destination "platform=macOS" \
+            -derivedDataPath build \
             clean build
+      - name: Verify build output
+        run: |
+          echo "Contents of build directory:"
+          find build -name "*.app" -type d
+          ls -la build/Build/Products/Release/ || echo "Release directory not found"
+      - name: Copy app to expected location
+        run: |
+          mkdir -p "build/Release"
+          cp -R build/Build/Products/Release/*.app "build/Release/"
       - name: Install create-dmg
         run: brew install create-dmg
       - name: Build DMG
@@ -79,7 +88,7 @@ jobs:
           git config user.email "github-actions[bot]@users.noreply.github.com"
           git add appcast.xml
           if ! git diff --cached --quiet; then
-            git commit -m "chore(release): update appcast.xml for ${VERSION}"
+            git commit -m "chore(release): update appcast.xml for ${{ steps.version.outputs.version }}"
             git push origin main
           else
             echo "No changes to appcast.xml, skipping commit."
