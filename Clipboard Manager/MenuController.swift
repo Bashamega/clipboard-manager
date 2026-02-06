@@ -40,7 +40,8 @@ final class MenuController {
             item.isEnabled = false
             menu.addItem(item)
         } else {
-            for (index, text) in history.enumerated() {
+            for (index, clip) in history.prefix(9).enumerated() {
+                let text = clip.text
                 // Truncate long text for display
                 let displayText = text.count > 50
                     ? String(text.prefix(47)) + "..."
@@ -66,6 +67,15 @@ final class MenuController {
             menu.addItem(clearItem)
             menu.addItem(NSMenuItem.separator())
         }
+        
+        let finderItem = NSMenuItem(
+            title: "Show Finder",
+            action: #selector(CopyListener.open),
+            keyEquivalent: "f"
+        )
+        finderItem.target = copyListener
+        menu.addItem(finderItem)
+
         
         menu.addItem(NSMenuItem(title: "Quit", action: #selector(NSApplication.terminate(_:)), keyEquivalent: "q"))
 
