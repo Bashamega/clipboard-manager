@@ -1,0 +1,10 @@
+<?xml version="1.0" encoding="utf-8"?>
+<rss version="2.0"
+     xmlns:sparkle="http://www.andymatuschak.org/xml-namespaces/sparkle">
+  <channel>
+    <title>Clipboard Manager Updates</title>
+    <link>https://github.com/Bashamega/clipboard-manager</link>
+    <description>Auto‑update feed for Clipboard Manager</description>
+    <language>en</language>
+  </channel>
+</rss>

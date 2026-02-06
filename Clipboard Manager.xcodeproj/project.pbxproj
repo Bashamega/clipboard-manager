@@ -7,15 +7,25 @@
 	objects = {
 
 /* Begin PBXBuildFile section */
+		663DEFE12F36189100524F28 /* AppDelegate.swift in Sources */ = {isa = PBXBuildFile; fileRef = 663DEFE02F36188C00524F28 /* AppDelegate.swift */; };
+		663DEFE42F36191500524F28 /* Sparkle in Frameworks */ = {isa = PBXBuildFile; productRef = 663DEFE32F36191500524F28 /* Sparkle */; };
+		663DEFE62F36193100524F28 /* appcast.xml in Resources */ = {isa = PBXBuildFile; fileRef = 663DEFE52F36192D00524F28 /* appcast.xml */; };
 		66777DA32F2F38FE00C92BC7 /* .gitignore in Resources */ = {isa = PBXBuildFile; fileRef = 66777DA22F2F38F900C92BC7 /* .gitignore */; };
 /* End PBXBuildFile section */
 
 /* Begin PBXFileReference section */
+		663DEFE02F36188C00524F28 /* AppDelegate.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = AppDelegate.swift; sourceTree = "<group>"; };
+		663DEFE52F36192D00524F28 /* appcast.xml */ = {isa = PBXFileReference; lastKnownFileType = text.xml; path = appcast.xml; sourceTree = "<group>"; };
 		66777D8B2F2F30DA00C92BC7 /* Clipboard Manager.app */ = {isa = PBXFileReference; explicitFileType = wrapper.application; includeInIndex = 0; path = "Clipboard Manager.app"; sourceTree = BUILT_PRODUCTS_DIR; };
 		66777DA22F2F38F900C92BC7 /* .gitignore */ = {isa = PBXFileReference; lastKnownFileType = text; path = .gitignore; sourceTree = "<group>"; };
 /* End PBXFileReference section */
 
 /* Begin PBXFileSystemSynchronizedRootGroup section */
+		663DEFD92F36180800524F28 /* scripts */ = {
+			isa = PBXFileSystemSynchronizedRootGroup;
+			path = scripts;
+			sourceTree = "<group>";
+		};
 		66777D8D2F2F30DA00C92BC7 /* Clipboard Manager */ = {
 			isa = PBXFileSystemSynchronizedRootGroup;
 			path = "Clipboard Manager";
@@ -28,6 +38,7 @@
 			isa = PBXFrameworksBuildPhase;
 			buildActionMask = 2147483647;
 			files = (
+				663DEFE42F36191500524F28 /* Sparkle in Frameworks */,
 			);
 			runOnlyForDeploymentPostprocessing = 0;
 		};
@@ -37,6 +48,9 @@
 		66777D822F2F30DA00C92BC7 = {
 			isa = PBXGroup;
 			children = (
+				663DEFE52F36192D00524F28 /* appcast.xml */,
+				663DEFE02F36188C00524F28 /* AppDelegate.swift */,
+				663DEFD92F36180800524F28 /* scripts */,
 				66777DA22F2F38F900C92BC7 /* .gitignore */,
 				66777D8D2F2F30DA00C92BC7 /* Clipboard Manager */,
 				66777D8C2F2F30DA00C92BC7 /* Products */,
@@ -67,10 +81,12 @@
 			dependencies = (
 			);
 			fileSystemSynchronizedGroups = (
+				663DEFD92F36180800524F28 /* scripts */,
 				66777D8D2F2F30DA00C92BC7 /* Clipboard Manager */,
 			);
 			name = "Clipboard Manager";
 			packageProductDependencies = (
+				663DEFE32F36191500524F28 /* Sparkle */,
 			);
 			productName = "Clipboard Manager";
 			productReference = 66777D8B2F2F30DA00C92BC7 /* Clipboard Manager.app */;
@@ -100,6 +116,9 @@
 			);
 			mainGroup = 66777D822F2F30DA00C92BC7;
 			minimizedProjectReferenceProxies = 1;
+			packageReferences = (
+				663DEFE22F36191500524F28 /* XCRemoteSwiftPackageReference "Sparkle" */,
+			);
 			preferredProjectObjectVersion = 77;
 			productRefGroup = 66777D8C2F2F30DA00C92BC7 /* Products */;
 			projectDirPath = "";
@@ -116,6 +135,7 @@
 			buildActionMask = 2147483647;
 			files = (
 				66777DA32F2F38FE00C92BC7 /* .gitignore in Resources */,
+				663DEFE62F36193100524F28 /* appcast.xml in Resources */,
 			);
 			runOnlyForDeploymentPostprocessing = 0;
 		};
@@ -126,6 +146,7 @@
 			isa = PBXSourcesBuildPhase;
 			buildActionMask = 2147483647;
 			files = (
+				663DEFE12F36189100524F28 /* AppDelegate.swift in Sources */,
 			);
 			runOnlyForDeploymentPostprocessing = 0;
 		};
@@ -332,6 +353,25 @@
 			defaultConfigurationName = Release;
 		};
 /* End XCConfigurationList section */
+
+/* Begin XCRemoteSwiftPackageReference section */
+		663DEFE22F36191500524F28 /* XCRemoteSwiftPackageReference "Sparkle" */ = {
+			isa = XCRemoteSwiftPackageReference;
+			repositoryURL = "https://github.com/sparkle-project/Sparkle";
+			requirement = {
+				kind = upToNextMajorVersion;
+				minimumVersion = 2.8.1;
+			};
+		};
+/* End XCRemoteSwiftPackageReference section */
+
+/* Begin XCSwiftPackageProductDependency section */
+		663DEFE32F36191500524F28 /* Sparkle */ = {
+			isa = XCSwiftPackageProductDependency;
+			package = 663DEFE22F36191500524F28 /* XCRemoteSwiftPackageReference "Sparkle" */;
+			productName = Sparkle;
+		};
+/* End XCSwiftPackageProductDependency section */
 	};
 	rootObject = 66777D832F2F30DA00C92BC7 /* Project object */;
 }
