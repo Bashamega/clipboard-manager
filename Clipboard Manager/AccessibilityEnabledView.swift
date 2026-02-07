@@ -130,6 +130,14 @@ private extension ClipboardWindowView {
                 copyToClipboard(item.text)
             }
             .help("Click to copy")
+            // Add pointer cursor on hover
+            .onHover { hovering in
+                if hovering {
+                    NSCursor.pointingHand.push()
+                } else {
+                    NSCursor.pop()
+                }
+            }
     }
 }
 
