@@ -146,8 +146,7 @@ private extension ClipboardWindowView {
 private extension ClipboardWindowView {
     
     func copyToClipboard(_ text: String) {
-        NSPasteboard.general.clearContents()
-        NSPasteboard.general.setString(text, forType: .string)
+        ClipboardUtils.copyToClipboard(text)
     }
     
     func formattedDate(_ date: Date) -> String {
