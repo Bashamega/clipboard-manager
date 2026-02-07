@@ -5,7 +5,7 @@ import Combine
 // MARK: - Model
 
 struct ClipboardItem: Identifiable, Hashable {
-    let id = UUID()
+    let id: Int
     let text: String
     let date: Date
 }
@@ -23,14 +23,14 @@ struct ClipboardWindowView: View {
     
     private var items: [ClipboardItem] {
         let isoFormatter = ISO8601DateFormatter()
-        return copyListener.history.compactMap { clip in
+        return copyListener.history.enumerated().compactMap { index, clip in
             let date: Date
             if let parsed = isoFormatter.date(from: clip.date) {
                 date = parsed
             } else {
                 date = Date() // fallback
             }
-            return ClipboardItem(text: clip.text, date: date)
+            return ClipboardItem(id: index, text: clip.text, date: date)
         }
     }
     
