@@ -3,11 +3,11 @@
   <channel>
     <title>Clipboard Manager Updates</title>
     <item>
-      <title>Version v0.0.2</title>
-      <sparkle:version>v0.0.2</sparkle:version>
-      <sparkle:shortVersionString>v0.0.2</sparkle:shortVersionString>
+      <title>Version v0.0.3</title>
+      <sparkle:version>v0.0.3</sparkle:version>
+      <sparkle:shortVersionString>v0.0.3</sparkle:shortVersionString>
       <enclosure
-        url="https://github.com/Bashamega/clipboard-manager/releases/download/v0.0.2/Clipboard.Manager.dmg"
+        url="https://github.com/Bashamega/clipboard-manager/releases/download/v0.0.3/Clipboard.Manager.dmg"
         sparkle:os="macos"
         length="0"
         type="application/octet-stream"/>
