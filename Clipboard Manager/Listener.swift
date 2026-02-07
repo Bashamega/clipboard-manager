@@ -10,18 +10,34 @@ import Foundation
 
 final class CopyListener {
     
+    // MARK: - Singleton Instance
+    static let shared = CopyListener()
+    private init() {} // private init prevents creating new instances
+
+    // MARK: - Properties
     private var changeCount: Int = 0
     private var timer: Timer?
     
     // JSON file manager for persisting history
     private let storage = JSONFileManager()
-    
-    // Callback when history changes
-    var onHistoryChanged: (() -> Void)?
-    
-    @objc func open(){
+    // MARK: - Clipboard Listeners
+    private var historyObservers: [() -> Void] = []
+
+    // Add a new observer
+    func addObserver(_ observer: @escaping () -> Void) {
+        historyObservers.append(observer)
+    }
+
+    // Notify all observers
+    private func notifyObservers() {
+        for observer in historyObservers {
+            observer()
+        }
+    }
+    // MARK: - Open Storage Folder
+    @objc func open() {
         let fileURL = URL(fileURLWithPath: storage.getFileURL().path)
-        let folderURL = fileURL.deletingLastPathComponent() // Get folder containing the file
+        let folderURL = fileURL.deletingLastPathComponent()
         
         if FileManager.default.fileExists(atPath: folderURL.path) {
             NSWorkspace.shared.open(folderURL)
@@ -29,9 +45,8 @@ final class CopyListener {
             print("❌ Folder does not exist: \(folderURL.path)")
         }
     }
-    
 
-    // MARK: - Start / Stop
+    // MARK: - Start / Stop Clipboard Monitoring
     func start() {
         changeCount = NSPasteboard.general.changeCount
         
@@ -45,7 +60,7 @@ final class CopyListener {
         timer?.invalidate()
         timer = nil
     }
-    
+
     // MARK: - Clipboard History
     func getHistory() -> [JSONFileManager.Clip] {
         storage.get()
@@ -53,24 +68,18 @@ final class CopyListener {
     
     func clearHistory() {
         storage.removeAll()
-        onHistoryChanged?()
+        notifyObservers()
     }
     
     private func addClip(_ text: String) {
-        // Use JSONFileManager's add, but handle duplicates & maxHistory manually
         var currentItems = storage.get()
-        
-        // Remove if already exists
-        currentItems.removeAll { $0.text == text }
-        
-        // Insert at top
+        currentItems.removeAll { $0.text == text } // remove duplicates
         storage.add(text)
-        currentItems = storage.get() // reload after add
-        
-        onHistoryChanged?()
+        currentItems = storage.get()
+        notifyObservers()
     }
     
-    // MARK: - Private
+    // MARK: - Private Clipboard Checking
     private func checkClipboard() {
         let pasteboard = NSPasteboard.general
         
