@@ -15,15 +15,17 @@ struct ClipboardItem: Identifiable, Hashable {
 struct ClipboardWindowView: View {
     
     @StateObject private var copyListener = CopyListenerWrapper(listener: CopyListener.shared)
+    @State private var searchText: String = "" // Search text
     
     private let columns = [
         GridItem(.flexible(), spacing: 12),
         GridItem(.flexible(), spacing: 12)
     ]
     
-    private var items: [ClipboardItem] {
+    // Filtered items based on search
+    private var filteredItems: [ClipboardItem] {
         let isoFormatter = ISO8601DateFormatter()
-        return copyListener.history.enumerated().compactMap { index, clip in
+        let allItems = copyListener.history.enumerated().compactMap { index, clip in
             let date: Date
             if let parsed = isoFormatter.date(from: clip.date) {
                 date = parsed
@@ -32,6 +34,12 @@ struct ClipboardWindowView: View {
             }
             return ClipboardItem(id: index, text: clip.text, date: date)
         }
+        
+        if searchText.isEmpty {
+            return allItems
+        } else {
+            return allItems.filter { $0.text.localizedCaseInsensitiveContains(searchText) }
+        }
     }
     
     var body: some View {
@@ -39,11 +47,10 @@ struct ClipboardWindowView: View {
             header
             Divider()
             
-            if items.isEmpty {
-                // Empty state
+            if filteredItems.isEmpty {
                 VStack {
                     Spacer()
-                    Text("📋 Clipboard is empty")
+                    Text(searchText.isEmpty ? "📋 Clipboard is empty" : "🔍 No results found")
                         .font(.subheadline)
                         .foregroundStyle(.secondary)
                         .multilineTextAlignment(.center)
@@ -51,7 +58,7 @@ struct ClipboardWindowView: View {
                 }
             } else {
                 ScrollView {
-                    content
+                    content(items: filteredItems)
                         .padding(20)
                 }
             }
@@ -86,11 +93,16 @@ private extension ClipboardWindowView {
             }
             
             Spacer()
+            
+            // Search field
+            TextField("Search...", text: $searchText)
+                .textFieldStyle(.roundedBorder)
+                .frame(width: 150)
         }
         .padding()
     }
     
-    var content: some View {
+    func content(items: [ClipboardItem]) -> some View {
         let grouped = Dictionary(grouping: items) { Calendar.current.startOfDay(for: $0.date) }
         let sortedDates = grouped.keys.sorted(by: >)
         
@@ -130,7 +142,6 @@ private extension ClipboardWindowView {
                 copyToClipboard(item.text)
             }
             .help("Click to copy")
-            // Add pointer cursor on hover
             .onHover { hovering in
                 if hovering {
                     NSCursor.pointingHand.push()
