@@ -8,6 +8,7 @@ struct ClipboardItem: Identifiable, Hashable {
     let id: Int
     let text: String
     let date: Date
+    let pinned: Bool
 }
 
 // MARK: - Main UI
@@ -32,7 +33,7 @@ struct ClipboardWindowView: View {
             } else {
                 date = Date() // fallback
             }
-            return ClipboardItem(id: index, text: clip.text, date: date)
+            return ClipboardItem(id: index, text: clip.text, date: date, pinned: clip.pinned ?? false)
         }
         
         if searchText.isEmpty {
@@ -103,10 +104,32 @@ private extension ClipboardWindowView {
     }
     
     func content(items: [ClipboardItem]) -> some View {
-        let grouped = Dictionary(grouping: items) { Calendar.current.startOfDay(for: $0.date) }
+        let pinnedItems = items.filter { $0.pinned }
+        let unpinnedItems = items.filter { !$0.pinned }
+
+        let grouped = Dictionary(grouping: unpinnedItems) { Calendar.current.startOfDay(for: $0.date) }
         let sortedDates = grouped.keys.sorted(by: >)
         
         return VStack(alignment: .leading, spacing: 28) {
+            // Pinned items section
+            if !pinnedItems.isEmpty {
+                VStack(alignment: .leading, spacing: 12) {
+                    HStack {
+                        Image(systemName: "pin.fill")
+                        Text("Pinned")
+                    }
+                    .font(.subheadline.bold())
+                    .foregroundStyle(.secondary)
+
+                    LazyVGrid(columns: columns, spacing: 12) {
+                        ForEach(pinnedItems) { item in
+                            clipboardCard(item)
+                        }
+                    }
+                }
+            }
+
+            // Normal history
             ForEach(sortedDates, id: \.self) { date in
                 VStack(alignment: .leading, spacing: 12) {
                     Text(formattedDate(date))
@@ -124,31 +147,50 @@ private extension ClipboardWindowView {
     }
     
     func clipboardCard(_ item: ClipboardItem) -> some View {
-        Text(item.text)
-            .font(.system(size: 13))
-            .lineLimit(4)
-            .padding(12)
-            .frame(maxWidth: .infinity, maxHeight: 120, alignment: .leading)
-            .background(
-                RoundedRectangle(cornerRadius: 12)
-                    .fill(Color.primary.opacity(0.04))
-            )
-            .overlay(
-                RoundedRectangle(cornerRadius: 12)
-                    .stroke(Color.primary.opacity(0.06))
-            )
-            .contentShape(Rectangle())
-            .onTapGesture {
-                copyToClipboard(item.text)
-            }
-            .help("Click to copy")
-            .onHover { hovering in
-                if hovering {
-                    NSCursor.pointingHand.push()
-                } else {
-                    NSCursor.pop()
+        ZStack(alignment: .topTrailing) {
+            Text(item.text)
+                .font(.system(size: 13))
+                .lineLimit(4)
+                .padding(12)
+                .frame(maxWidth: .infinity, maxHeight: 120, alignment: .leading)
+                .background(
+                    RoundedRectangle(cornerRadius: 12)
+                        .fill(item.pinned ? Color.blue.opacity(0.06) : Color.primary.opacity(0.04))
+                )
+                .overlay(
+                    RoundedRectangle(cornerRadius: 12)
+                        .stroke(item.pinned ? Color.blue.opacity(0.2) : Color.primary.opacity(0.06))
+                )
+                .contentShape(Rectangle())
+                .onTapGesture {
+                    copyToClipboard(item.text)
                 }
+            
+            Button {
+                if item.pinned {
+                    copyListener.unpin(item)
+                } else {
+                    copyListener.pin(item)
+                }
+            } label: {
+                Image(systemName: item.pinned ? "pin.fill" : "pin")
+                    .font(.system(size: 10))
+                    .foregroundStyle(item.pinned ? .blue : .secondary)
+                    .padding(8)
+                    .background(.ultraThinMaterial)
+                    .clipShape(Circle())
             }
+            .buttonStyle(.plain)
+            .padding(8)
+        }
+        .help(item.pinned ? "Unpin item" : "Pin item")
+        .onHover { hovering in
+            if hovering {
+                NSCursor.pointingHand.push()
+            } else {
+                NSCursor.pop()
+            }
+        }
     }
 }
 

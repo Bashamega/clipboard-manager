@@ -71,6 +71,16 @@ final class CopyListener {
         notifyObservers()
     }
     
+    func pinItem(_ text: String) {
+        storage.pinItem(text)
+        notifyObservers()
+    }
+
+    func unpinItem(_ text: String) {
+        storage.unpinItem(text)
+        notifyObservers()
+    }
+    
     private func addClip(_ text: String) {
         var currentItems = storage.get()
         currentItems.removeAll { $0.text == text } // remove duplicates

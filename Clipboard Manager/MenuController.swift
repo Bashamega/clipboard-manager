@@ -35,25 +35,29 @@ final class MenuController {
         let menu = NSMenu()
 
         let history = copyListener.getHistory()
+        let pinnedItems = history.filter { $0.pinned ?? false }
+        let unpinnedItems = history.filter { !($0.pinned ?? false) }
+
         if history.isEmpty {
             let item = NSMenuItem(title: "No clipboard history yet", action: nil, keyEquivalent: "")
             item.isEnabled = false
             menu.addItem(item)
         } else {
-            for (index, clip) in history.prefix(9).enumerated() {
-                let text = clip.text
-                let displayText = text.count > 50
-                    ? String(text.prefix(47)) + "..."
-                    : text
-                
-                let item = NSMenuItem(
-                    title: displayText.replacingOccurrences(of: "\n", with: " "),
-                    action: #selector(copyMenuItem(_:)),
-                    keyEquivalent: index < 9 ? "\(index + 1)" : ""
-                )
-                item.target = self
-                item.representedObject = text
-                menu.addItem(item)
+            // Pinned items
+            if !pinnedItems.isEmpty {
+                let pinnedHeader = NSMenuItem(title: "📌 Pinned Items", action: nil, keyEquivalent: "")
+                pinnedHeader.isEnabled = false
+                menu.addItem(pinnedHeader)
+
+                for clip in pinnedItems.prefix(5) {
+                    addMenuItem(for: clip, to: menu)
+                }
+                menu.addItem(NSMenuItem.separator())
+            }
+
+            // Recent history
+            for (index, clip) in unpinnedItems.prefix(9).enumerated() {
+                addMenuItem(for: clip, to: menu, index: index)
             }
         }
 
@@ -77,6 +81,25 @@ final class MenuController {
         menu.addItem(NSMenuItem(title: "Quit", action: #selector(NSApplication.terminate(_:)), keyEquivalent: "q"))
 
         statusItem.menu = menu
+    }
+
+    private func addMenuItem(for clip: JSONFileManager.Clip, to menu: NSMenu, index: Int? = nil) {
+        let text = clip.text
+        let displayText = text.count > 50
+            ? String(text.prefix(47)) + "..."
+            : text
+        
+        let title = displayText.replacingOccurrences(of: "\n", with: " ")
+        let keyEquivalent = (index != nil && index! < 9) ? "\(index! + 1)" : ""
+        
+        let item = NSMenuItem(
+            title: title,
+            action: #selector(copyMenuItem(_:)),
+            keyEquivalent: keyEquivalent
+        )
+        item.target = self
+        item.representedObject = text
+        menu.addItem(item)
     }
 
     @objc private func copyMenuItem(_ sender: NSMenuItem) {
