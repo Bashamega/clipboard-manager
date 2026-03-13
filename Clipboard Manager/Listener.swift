@@ -67,7 +67,7 @@ final class CopyListener {
     }
     
     func clearHistory() {
-        storage.removeAll()
+        storage.removeUnpinned()
         notifyObservers()
     }
     

@@ -84,7 +84,7 @@ final class JSONFileManager {
         save(items)
     }
     
-    func removeAll() {
+    func removeUnpinned() {
         let items = get()
         let pinnedItems = items.filter { $0.pinned ?? false }
         save(pinnedItems)

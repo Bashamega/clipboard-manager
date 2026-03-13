@@ -123,7 +123,19 @@ private extension ClipboardWindowView {
 
                     LazyVGrid(columns: columns, spacing: 12) {
                         ForEach(pinnedItems) { item in
-                            clipboardCard(item)
+                            ClipboardCardView(
+                                item: item,
+                                copyToClipboard: { text in
+                                    copyToClipboard(text)
+                                },
+                                onPinToggle: {
+                                    if item.pinned {
+                                        copyListener.unpin(item)
+                                    } else {
+                                        copyListener.pin(item)
+                                    }
+                                }
+                            )
                         }
                     }
                 }
@@ -138,15 +150,37 @@ private extension ClipboardWindowView {
                     
                     LazyVGrid(columns: columns, spacing: 12) {
                         ForEach(grouped[date] ?? []) { item in
-                            clipboardCard(item)
+                            ClipboardCardView(
+                                item: item,
+                                copyToClipboard: { text in
+                                    copyToClipboard(text)
+                                },
+                                onPinToggle: {
+                                    if item.pinned {
+                                        copyListener.unpin(item)
+                                    } else {
+                                        copyListener.pin(item)
+                                    }
+                                }
+                            )
                         }
                     }
                 }
             }
         }
     }
+}
+
+// MARK: - Subviews
+
+struct ClipboardCardView: View {
+    let item: ClipboardItem
+    let copyToClipboard: (String) -> Void
+    let onPinToggle: () -> Void
     
-    func clipboardCard(_ item: ClipboardItem) -> some View {
+    @State private var isHovering = false
+    
+    var body: some View {
         ZStack(alignment: .topTrailing) {
             Text(item.text)
                 .font(.system(size: 13))
@@ -167,11 +201,7 @@ private extension ClipboardWindowView {
                 }
             
             Button {
-                if item.pinned {
-                    copyListener.unpin(item)
-                } else {
-                    copyListener.pin(item)
-                }
+                onPinToggle()
             } label: {
                 Image(systemName: item.pinned ? "pin.fill" : "pin")
                     .font(.system(size: 10))
@@ -186,9 +216,19 @@ private extension ClipboardWindowView {
         .help(item.pinned ? "Unpin item" : "Pin item")
         .onHover { hovering in
             if hovering {
+                isHovering = true
                 NSCursor.pointingHand.push()
             } else {
+                if isHovering {
+                    NSCursor.pop()
+                    isHovering = false
+                }
+            }
+        }
+        .onDisappear {
+            if isHovering {
                 NSCursor.pop()
+                isHovering = false
             }
         }
     }
