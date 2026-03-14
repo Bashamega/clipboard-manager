@@ -91,9 +91,9 @@ final class JSONFileManager {
     }
     
     /// Pin an item by its text, sets pinned to true
-    func pinItem(_ id: String) {
+    func pinItem(_ text: String) {
         var items = get()
-        guard let idx = items.firstIndex(where: { $0.text == id }) else { return }
+        guard let idx = items.firstIndex(where: { $0.text == text }) else { return }
 
         let oldItem = items[idx]
         let newItem = Clip(date: oldItem.date, text: oldItem.text, pinned: true)
@@ -103,9 +103,9 @@ final class JSONFileManager {
     }
 
     /// Unpin an item by its text, sets pinned to false (or nil)
-    func unpinItem(_ id: String) {
+    func unpinItem(_ text: String) {
         var items = get()
-        guard let idx = items.firstIndex(where: { $0.text == id }) else { return }
+        guard let idx = items.firstIndex(where: { $0.text == text }) else { return }
 
         let oldItem = items[idx]
         let newItem = Clip(date: oldItem.date, text: oldItem.text, pinned: false)
