@@ -20,16 +20,6 @@
 		66777DA22F2F38F900C92BC7 /* .gitignore */ = {isa = PBXFileReference; lastKnownFileType = text; path = .gitignore; sourceTree = "<group>"; };
 /* End PBXFileReference section */
 
-/* Begin PBXFileSystemSynchronizedBuildFileExceptionSet section */
-		6683974E2F6532E20034D61F /* Exceptions for "Clipboard Manager" folder in "Clipboard Manager" target */ = {
-			isa = PBXFileSystemSynchronizedBuildFileExceptionSet;
-			membershipExceptions = (
-				"Clipboard-Manager-Info.plist",
-			);
-			target = 66777D8A2F2F30DA00C92BC7 /* Clipboard Manager */;
-		};
-/* End PBXFileSystemSynchronizedBuildFileExceptionSet section */
-
 /* Begin PBXFileSystemSynchronizedRootGroup section */
 		663DEFD92F36180800524F28 /* scripts */ = {
 			isa = PBXFileSystemSynchronizedRootGroup;
@@ -38,9 +28,6 @@
 		};
 		66777D8D2F2F30DA00C92BC7 /* Clipboard Manager */ = {
 			isa = PBXFileSystemSynchronizedRootGroup;
-			exceptions = (
-				6683974E2F6532E20034D61F /* Exceptions for "Clipboard Manager" folder in "Clipboard Manager" target */,
-			);
 			path = "Clipboard Manager";
 			sourceTree = "<group>";
 		};

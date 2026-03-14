@@ -1,13 +1,16 @@
 name: macOS Release
+
 on:
   push:
     branches:
       - main
     paths-ignore:
       - appcast.xml
+
 concurrency:
   group: release-main
   cancel-in-progress: true
+
 jobs:
   release:
     runs-on: macos-latest
@@ -16,74 +19,77 @@ jobs:
     env:
       APP_NAME: Clipboard Manager
       DMG_NAME: Clipboard.Manager.dmg
+
     steps:
+      # 1. Checkout repo
       - name: Checkout
         uses: actions/checkout@v4
         with:
           fetch-depth: 0
-      - name: Configure git
-        run: |
-          git config user.name "github-actions[bot]"
-          git config user.email "github-actions[bot]@users.noreply.github.com"
+
+      # 2. Compute next version
       - name: Compute next version
         id: version
         run: |
           git fetch --tags --force
           LATEST_TAG=$(git tag -l 'v[0-9]*' --sort=-v:refname | head -n1)
-          if [ -z "$LATEST_TAG" ]; then
-            LATEST_TAG="v0.0.0"
-          fi
+          if [ -z "$LATEST_TAG" ]; then LATEST_TAG="v0.0.0"; fi
 
           BASE_VERSION=${LATEST_TAG#v}
           IFS='.' read -r MAJOR MINOR PATCH <<< "$BASE_VERSION"
           PATCH=$((PATCH+1))
-
           SHORT_VERSION="$MAJOR.$MINOR.$PATCH"
           TAG="v$SHORT_VERSION"
-
-          while git rev-parse -q --verify "refs/tags/$TAG" >/dev/null || \
-            git ls-remote --tags origin "refs/tags/$TAG" | grep -q .; do
+          while git rev-parse -q --verify "refs/tags/$TAG" >/dev/null || git ls-remote --tags origin "$TAG" | grep -q .; do
             PATCH=$((PATCH+1))
             SHORT_VERSION="$MAJOR.$MINOR.$PATCH"
             TAG="v$SHORT_VERSION"
           done
 
           BUILD_NUMBER="$GITHUB_RUN_NUMBER"
-
           echo "tag=$TAG" >> "$GITHUB_OUTPUT"
           echo "short_version=$SHORT_VERSION" >> "$GITHUB_OUTPUT"
           echo "build_number=$BUILD_NUMBER" >> "$GITHUB_OUTPUT"
-      - name: Update Xcode version settings
+
+      # 3. Update Xcode version
+      - name: Update Xcode version
         run: |
           SHORT_VERSION="${{ steps.version.outputs.short_version }}"
           BUILD_NUMBER="${{ steps.version.outputs.build_number }}"
           PBXPROJ="Clipboard Manager.xcodeproj/project.pbxproj"
-
           perl -pi -e "s/MARKETING_VERSION = [^;]+;/MARKETING_VERSION = $SHORT_VERSION;/g" "$PBXPROJ"
           perl -pi -e "s/CURRENT_PROJECT_VERSION = [^;]+;/CURRENT_PROJECT_VERSION = $BUILD_NUMBER;/g" "$PBXPROJ"
-      - name: Create Git tag
+
+      # 4. Create Git tag
+      - name: Tag release
         run: |
           git tag "${{ steps.version.outputs.tag }}"
           git push origin "${{ steps.version.outputs.tag }}"
+
+      # 5. Build the app
       - name: Build macOS app
         run: |
-          xcodebuild \
-            -project "Clipboard Manager.xcodeproj" \
-            -scheme "Clipboard Manager" \
-            -configuration Release \
-            -derivedDataPath build \
-            clean build
-      - name: Verify build output
+          xcodebuild -project "Clipboard Manager.xcodeproj" \
+                     -scheme "Clipboard Manager" \
+                     -configuration Release \
+                     -derivedDataPath build \
+                     clean build
+
+      # 6. Copy app to expected folder
+      - name: Prepare app for DMG
         run: |
-          echo "Contents of build directory:"
-          find build -name "*.app" -type d
-          ls -la build/Build/Products/Release/ || echo "Release directory not found"
-      - name: Copy app to expected location
-        run: |
-          mkdir -p "build/Release"
-          cp -R build/Build/Products/Release/*.app "build/Release/"
+          mkdir -p build/Release
+          cp -R build/Build/Products/Release/*.app build/Release/
+
+      # 7. Install create-dmg
       - name: Install create-dmg
         run: brew install create-dmg
+
+      # 8. Build DMG
+      - name: Build DMG
+        run: ./scripts/build_dmg.sh
+
+      # 9. Install Sparkle tools
       - name: Install Sparkle tools
         env:
           SPARKLE_VERSION: 2.9.0
@@ -91,93 +97,40 @@ jobs:
           curl -L -o "$RUNNER_TEMP/Sparkle.tar.xz" \
             "https://github.com/sparkle-project/Sparkle/releases/download/${SPARKLE_VERSION}/Sparkle-${SPARKLE_VERSION}.tar.xz"
           tar -xJf "$RUNNER_TEMP/Sparkle.tar.xz" -C "$RUNNER_TEMP"
-          if [ ! -x "$RUNNER_TEMP/Sparkle-${SPARKLE_VERSION}/bin/sign_update" ]; then
-            echo "sign_update not found in Sparkle tools" >&2
-            exit 1
-          fi
-          echo "$RUNNER_TEMP/Sparkle-${SPARKLE_VERSION}/bin" >> "$GITHUB_PATH"
-      - name: Build DMG
-        run: ./scripts/build_dmg.sh
-      - name: Sign DMG (optional)
+          echo "$RUNNER_TEMP/Sparkle-${SPARKLE_VERSION}/Tools/bin" >> "$GITHUB_PATH"
+          ls "$RUNNER_TEMP/Sparkle-${SPARKLE_VERSION}/Tools/bin"
+
+      # 10. Sign DMG with Sparkle EdDSA key
+      - name: Sign DMG
         id: sign
         env:
           SPARKLE_EDDSA_PRIVATE_KEY: ${{ secrets.SPARKLE_EDDSA_PRIVATE_KEY }}
         run: |
           DMG_PATH="build/dmg/$DMG_NAME"
-
           if [ -n "$SPARKLE_EDDSA_PRIVATE_KEY" ]; then
             KEY_FILE="$RUNNER_TEMP/sparkle_ed25519.key"
             printf "%s" "$SPARKLE_EDDSA_PRIVATE_KEY" > "$KEY_FILE"
-
             SIGNATURE_LINE=$(sign_update --ed-key-file "$KEY_FILE" "$DMG_PATH")
             SIGNATURE=$(echo "$SIGNATURE_LINE" | sed -E 's/.*sparkle:edSignature="([^"]+)".*/\1/')
-
-            if [ -n "$SIGNATURE" ]; then
-              echo "signature=$SIGNATURE" >> "$GITHUB_OUTPUT"
-              echo "signed=true" >> "$GITHUB_OUTPUT"
-            else
-              echo "signed=false" >> "$GITHUB_OUTPUT"
-            fi
-          else
-            echo "signed=false" >> "$GITHUB_OUTPUT"
+            echo "signature=$SIGNATURE" >> "$GITHUB_OUTPUT"
           fi
+
+      # 11. Generate appcast.xml
       - name: Generate appcast.xml
-        env:
-          TAG: ${{ steps.version.outputs.tag }}
-          SHORT_VERSION: ${{ steps.version.outputs.short_version }}
-          BUILD_NUMBER: ${{ steps.version.outputs.build_number }}
-          SIGNATURE: ${{ steps.sign.outputs.signature }}
         run: |
           DMG_PATH="build/dmg/$DMG_NAME"
-          DMG_SIZE=$(stat -f%z "$DMG_PATH")
-          DMG_URL_NAME=${DMG_NAME// /%20}
-          DMG_URL="https://github.com/${GITHUB_REPOSITORY}/releases/download/${TAG}/${DMG_URL_NAME}"
-          PUB_DATE=$(date -u "+%a, %d %b %Y %H:%M:%S %z")
+          DMG_URL="https://github.com/${GITHUB_REPOSITORY}/releases/download/${{ steps.version.outputs.tag }}/$DMG_NAME"
+          scripts/generate_appcast.sh "$DMG_PATH" "$DMG_URL" "${{ steps.version.outputs.short_version }}" "${{ steps.version.outputs.build_number }}" "${{ steps.sign.outputs.signature }}"
 
-          ED_SIGNATURE_LINE=""
-          if [ -n "$SIGNATURE" ]; then
-            ED_SIGNATURE_LINE="      sparkle:edSignature=\"$SIGNATURE\""
-          fi
-
-          cat > appcast.xml <<EOF
-          <?xml version="1.0" encoding="utf-8"?>
-          <rss version="2.0" xmlns:sparkle="http://www.andymatuschak.org/xml-namespaces/sparkle">
-            <channel>
-              <title>Clipboard Manager Updates</title>
-              <item>
-                <title>Version ${SHORT_VERSION}</title>
-                <pubDate>${PUB_DATE}</pubDate>
-                <enclosure
-                  url="${DMG_URL}"
-                  sparkle:os="macos"
-                  sparkle:version="${BUILD_NUMBER}"
-                  sparkle:shortVersionString="${SHORT_VERSION}"
-          ${ED_SIGNATURE_LINE}
-                  length="${DMG_SIZE}"
-                  type="application/octet-stream"/>
-              </item>
-            </channel>
-          </rss>
-          EOF
-      - name: Create GitHub Release
+      # 12. Create GitHub Release
+      - name: Upload to GitHub Release
         env:
           GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
-          TAG: ${{ steps.version.outputs.tag }}
-          SHORT_VERSION: ${{ steps.version.outputs.short_version }}
         run: |
           DMG_PATH="build/dmg/$DMG_NAME"
-
+          TAG="${{ steps.version.outputs.tag }}"
           if gh release view "$TAG" >/dev/null 2>&1; then
-            gh release upload "$TAG" "$DMG_PATH" --clobber
+            gh release upload "$TAG" "$DMG_PATH" appcast.xml --clobber
           else
-            gh release create "$TAG" "$DMG_PATH" --title "Release ${SHORT_VERSION}" --generate-notes
-          fi
-      - name: Commit appcast.xml if changed
-        run: |
-          git add appcast.xml
-          if ! git diff --cached --quiet; then
-            git commit -m "chore(release): update appcast.xml for ${{ steps.version.outputs.tag }}"
-            git push origin main
-          else
-            echo "No changes to appcast.xml, skipping commit."
+            gh release create "$TAG" "$DMG_PATH" appcast.xml --title "Release ${{ steps.version.outputs.short_version }}" --generate-notes
           fi
