@@ -5,6 +5,7 @@
 //  Created by adam Naji on 01/02/2026.
 //
 import AppKit
+import Sparkle
 
 final class MenuController {
 
@@ -78,6 +79,16 @@ final class MenuController {
         finderItem.target = copyListener
         menu.addItem(finderItem)
 
+        menu.addItem(NSMenuItem.separator())
+
+        let checkUpdatesItem = NSMenuItem(
+            title: "Check for Updates...",
+            action: #selector(checkForUpdatesMenuItem),
+            keyEquivalent: ""
+        )
+        checkUpdatesItem.target = self
+        menu.addItem(checkUpdatesItem)
+
         menu.addItem(NSMenuItem(title: "Quit", action: #selector(NSApplication.terminate(_:)), keyEquivalent: "q"))
 
         statusItem.menu = menu
@@ -109,5 +120,9 @@ final class MenuController {
     
     @objc private func clearHistoryMenuItem() {
         ClipboardUtils.clearHistory(copyListener)
+    }
+
+    @objc private func checkForUpdatesMenuItem() {
+        updaterController.checkForUpdates(nil)
     }
 }
