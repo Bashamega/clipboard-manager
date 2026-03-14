@@ -83,7 +83,9 @@ jobs:
           mkdir -p "build/Release"
           cp -R build/Build/Products/Release/*.app "build/Release/"
       - name: Install create-dmg and Sparkle tools
-        run: brew install create-dmg sparkle
+        run: |
+          brew install create-dmg sparkle
+          echo "$(brew --prefix sparkle)/bin" >> "$GITHUB_PATH"
       - name: Build DMG
         run: ./scripts/build_dmg.sh
       - name: Sign DMG (optional)
