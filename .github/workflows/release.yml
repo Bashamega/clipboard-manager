@@ -19,22 +19,20 @@ jobs:
     env:
       APP_NAME: Clipboard Manager
       DMG_NAME: Clipboard.Manager.dmg
+      SPARKLE_VERSION: 2.8.0
 
     steps:
-      # 1. Checkout repo
       - name: Checkout
         uses: actions/checkout@v4
         with:
           fetch-depth: 0
 
-      # 2. Compute next version
       - name: Compute next version
         id: version
         run: |
           git fetch --tags --force
           LATEST_TAG=$(git tag -l 'v[0-9]*' --sort=-v:refname | head -n1)
           if [ -z "$LATEST_TAG" ]; then LATEST_TAG="v0.0.0"; fi
-
           BASE_VERSION=${LATEST_TAG#v}
           IFS='.' read -r MAJOR MINOR PATCH <<< "$BASE_VERSION"
           PATCH=$((PATCH+1))
@@ -45,13 +43,11 @@ jobs:
             SHORT_VERSION="$MAJOR.$MINOR.$PATCH"
             TAG="v$SHORT_VERSION"
           done
-
           BUILD_NUMBER="$GITHUB_RUN_NUMBER"
           echo "tag=$TAG" >> "$GITHUB_OUTPUT"
           echo "short_version=$SHORT_VERSION" >> "$GITHUB_OUTPUT"
           echo "build_number=$BUILD_NUMBER" >> "$GITHUB_OUTPUT"
 
-      # 3. Update Xcode version
       - name: Update Xcode version
         run: |
           SHORT_VERSION="${{ steps.version.outputs.short_version }}"
@@ -60,13 +56,11 @@ jobs:
           perl -pi -e "s/MARKETING_VERSION = [^;]+;/MARKETING_VERSION = $SHORT_VERSION;/g" "$PBXPROJ"
           perl -pi -e "s/CURRENT_PROJECT_VERSION = [^;]+;/CURRENT_PROJECT_VERSION = $BUILD_NUMBER;/g" "$PBXPROJ"
 
-      # 4. Create Git tag
       - name: Tag release
         run: |
           git tag "${{ steps.version.outputs.tag }}"
           git push origin "${{ steps.version.outputs.tag }}"
 
-      # 5. Build the app
       - name: Build macOS app
         run: |
           xcodebuild -project "Clipboard Manager.xcodeproj" \
@@ -75,24 +69,18 @@ jobs:
                      -derivedDataPath build \
                      clean build
 
-      # 6. Copy app to expected folder
       - name: Prepare app for DMG
         run: |
           mkdir -p build/Release
           cp -R build/Build/Products/Release/*.app build/Release/
 
-      # 7. Install create-dmg
       - name: Install create-dmg
         run: brew install create-dmg
 
-      # 8. Build DMG
       - name: Build DMG
         run: ./scripts/build_dmg.sh
 
-      # 9. Install Sparkle tools
       - name: Install Sparkle tools
-        env:
-          SPARKLE_VERSION: 2.9.0
         run: |
           curl -L -o "$RUNNER_TEMP/Sparkle.tar.xz" \
             "https://github.com/sparkle-project/Sparkle/releases/download/${SPARKLE_VERSION}/Sparkle-${SPARKLE_VERSION}.tar.xz"
@@ -100,29 +88,24 @@ jobs:
           echo "$RUNNER_TEMP/Sparkle-${SPARKLE_VERSION}/Tools/bin" >> "$GITHUB_PATH"
           ls "$RUNNER_TEMP/Sparkle-${SPARKLE_VERSION}/Tools/bin"
 
-      # 10. Sign DMG with Sparkle EdDSA key
       - name: Sign DMG
         id: sign
         env:
           SPARKLE_EDDSA_PRIVATE_KEY: ${{ secrets.SPARKLE_EDDSA_PRIVATE_KEY }}
         run: |
           DMG_PATH="build/dmg/$DMG_NAME"
-          if [ -n "$SPARKLE_EDDSA_PRIVATE_KEY" ]; then
-            KEY_FILE="$RUNNER_TEMP/sparkle_ed25519.key"
-            printf "%s" "$SPARKLE_EDDSA_PRIVATE_KEY" > "$KEY_FILE"
-            SIGNATURE_LINE=$(sign_update --ed-key-file "$KEY_FILE" "$DMG_PATH")
-            SIGNATURE=$(echo "$SIGNATURE_LINE" | sed -E 's/.*sparkle:edSignature="([^"]+)".*/\1/')
-            echo "signature=$SIGNATURE" >> "$GITHUB_OUTPUT"
-          fi
+          KEY_FILE="$RUNNER_TEMP/sparkle_ed25519.key"
+          printf "%s" "$SPARKLE_EDDSA_PRIVATE_KEY" > "$KEY_FILE"
+          SIGNATURE_LINE=$(sign_update --ed-key-file "$KEY_FILE" "$DMG_PATH")
+          SIGNATURE=$(echo "$SIGNATURE_LINE" | sed -E 's/.*sparkle:edSignature="([^"]+)".*/\1/')
+          echo "signature=$SIGNATURE" >> "$GITHUB_OUTPUT"
 
-      # 11. Generate appcast.xml
       - name: Generate appcast.xml
         run: |
           DMG_PATH="build/dmg/$DMG_NAME"
           DMG_URL="https://github.com/${GITHUB_REPOSITORY}/releases/download/${{ steps.version.outputs.tag }}/$DMG_NAME"
           scripts/generate_appcast.sh "$DMG_PATH" "$DMG_URL" "${{ steps.version.outputs.short_version }}" "${{ steps.version.outputs.build_number }}" "${{ steps.sign.outputs.signature }}"
 
-      # 12. Create GitHub Release
       - name: Upload to GitHub Release
         env:
           GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
