@@ -3,14 +3,13 @@
   <channel>
     <title>Clipboard Manager Updates</title>
     <item>
-      <title>Version 0.0.5</title>
-      <pubDate>Sat, 14 Mar 2026 00:00:00 +0000</pubDate>
+      <title>Version v0.0.11</title>
+      <sparkle:version>v0.0.11</sparkle:version>
+      <sparkle:shortVersionString>v0.0.11</sparkle:shortVersionString>
       <enclosure
-        url="https://github.com/Bashamega/clipboard-manager/releases/download/v0.0.5/Clipboard.Manager.dmg"
+        url="https://github.com/Bashamega/clipboard-manager/releases/download/v0.0.11/Clipboard.Manager.dmg"
         sparkle:os="macos"
-        sparkle:version="1"
-        sparkle:shortVersionString="0.0.5"
-        length="975787"
+        length="0"
         type="application/octet-stream"/>
     </item>
   </channel>
