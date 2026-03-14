@@ -81,4 +81,12 @@ final class CopyListenerWrapper: ObservableObject {
         // Start monitoring if not already started
         listener.start()
     }
+
+    func pin(_ item: ClipboardItem) {
+        listener.pinItem(item.text)
+    }
+
+    func unpin(_ item: ClipboardItem) {
+        listener.unpinItem(item.text)
+    }
 }

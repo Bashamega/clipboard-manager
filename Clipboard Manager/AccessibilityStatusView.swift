@@ -7,7 +7,7 @@ struct AccessibilityStatusView: View {
 
     var body: some View {
         VStack {
-            if isTrusted {
+            if !isTrusted {
                 // ✅ Use the separate enabled UI
                 ClipboardWindowView()
             } else {

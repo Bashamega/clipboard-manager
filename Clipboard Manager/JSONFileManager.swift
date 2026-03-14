@@ -14,6 +14,7 @@ final class JSONFileManager {
     struct Clip: Codable {
         let date: String
         let text: String
+        let pinned: Bool?
     }
     
     private let fileName: String
@@ -63,16 +64,19 @@ final class JSONFileManager {
     // MARK: - Write
     
     func add(_ string: String) {
-        let formatter = ISO8601DateFormatter()
-        let item = Clip(
-            date: formatter.string(from: Date()),
-            text: string
-        )
-        
         var items = get()
+        let existingItem = items.first { $0.text == string }
+        let pinned = existingItem?.pinned ?? false
         
         // Remove duplicates
         items.removeAll { $0.text == string }
+        
+        let formatter = ISO8601DateFormatter()
+        let item = Clip(
+            date: formatter.string(from: Date()),
+            text: string,
+            pinned: pinned
+        )
         
         // Insert newest at top
         items.insert(item, at: 0)
@@ -80,8 +84,34 @@ final class JSONFileManager {
         save(items)
     }
     
-    func removeAll() {
-        save([])
+    func removeUnpinned() {
+        let items = get()
+        let pinnedItems = items.filter { $0.pinned ?? false }
+        save(pinnedItems)
+    }
+    
+    /// Pin an item by its text, sets pinned to true
+    func pinItem(_ text: String) {
+        var items = get()
+        guard let idx = items.firstIndex(where: { $0.text == text }) else { return }
+
+        let oldItem = items[idx]
+        let newItem = Clip(date: oldItem.date, text: oldItem.text, pinned: true)
+        
+        items[idx] = newItem
+        save(items)
+    }
+
+    /// Unpin an item by its text, sets pinned to false (or nil)
+    func unpinItem(_ text: String) {
+        var items = get()
+        guard let idx = items.firstIndex(where: { $0.text == text }) else { return }
+
+        let oldItem = items[idx]
+        let newItem = Clip(date: oldItem.date, text: oldItem.text, pinned: false)
+        
+        items[idx] = newItem
+        save(items)
     }
     
     // MARK: - Private Save
